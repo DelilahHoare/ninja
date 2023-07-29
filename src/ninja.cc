@@ -1336,6 +1336,7 @@ int NinjaMain::RunBuild(int argc, char** argv, Status* status) {
     status->Error("%s", err.c_str());
     return 1;
   }
+  state_.SetTargetNodes(targets);
 
   disk_interface_.AllowStatCache(g_experimental_statcache);
 

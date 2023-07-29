@@ -368,4 +368,11 @@ struct DependencyScan {
   DyndepLoader dyndep_loader_;
 };
 
+enum class EscapeKind { kShellEscape, kDoNotEscape };
+
+/// Given a span of Nodes, construct a list of paths suitable for a command
+/// line.
+std::string MakePathList(const Node* const* const span, const size_t size,
+                         const char sep, EscapeKind escape_in_out);
+
 #endif  // NINJA_GRAPH_H_

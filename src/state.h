@@ -122,6 +122,8 @@ struct State {
   std::vector<Node*> RootNodes(std::string* error) const;
   std::vector<Node*> DefaultNodes(std::string* error) const;
 
+  void SetTargetNodes(const std::vector<Node*>& targets);
+
   /// Mapping of path -> Node.
   typedef ExternalStringHashMap<Node*>::Type Paths;
   Paths paths_;

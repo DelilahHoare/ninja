@@ -179,6 +179,11 @@ vector<Node*> State::DefaultNodes(string* err) const {
   return defaults_.empty() ? RootNodes(err) : defaults_;
 }
 
+void State::SetTargetNodes(const std::vector<Node*>& targets) {
+  bindings_.AddBinding("targets", MakePathList(targets.data(), targets.size(),
+                                               ' ', EscapeKind::kShellEscape));
+}
+
 void State::Reset() {
   for (Paths::iterator i = paths_.begin(); i != paths_.end(); ++i)
     i->second->ResetState();

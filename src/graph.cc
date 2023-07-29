@@ -381,15 +381,9 @@ bool Edge::AllInputsReady() const {
 
 /// An Env for an Edge, providing $in and $out.
 struct EdgeEnv : public Env {
-  enum EscapeKind { kShellEscape, kDoNotEscape };
-
   EdgeEnv(const Edge* const edge, const EscapeKind escape)
       : edge_(edge), escape_in_out_(escape), recursive_(false) {}
   virtual string LookupVariable(const string& var);
-
-  /// Given a span of Nodes, construct a list of paths suitable for a command
-  /// line.
-  std::string MakePathList(const Node* const* span, size_t size, char sep) const;
 
  private:
   std::vector<std::string> lookups_;
@@ -403,10 +397,11 @@ string EdgeEnv::LookupVariable(const string& var) {
     int explicit_deps_count = edge_->inputs_.size() - edge_->implicit_deps_ -
       edge_->order_only_deps_;
     return MakePathList(edge_->inputs_.data(), explicit_deps_count,
-                        var == "in" ? ' ' : '\n');
+                        var == "in" ? ' ' : '\n', escape_in_out_);
   } else if (var == "out") {
     int explicit_outs_count = edge_->outputs_.size() - edge_->implicit_outs_;
-    return MakePathList(&edge_->outputs_[0], explicit_outs_count, ' ');
+    return MakePathList(&edge_->outputs_[0], explicit_outs_count, ' ',
+                        escape_in_out_);
   }
 
   // Technical note about the lookups_ vector.
@@ -468,14 +463,16 @@ string EdgeEnv::LookupVariable(const string& var) {
   return result;
 }
 
-std::string EdgeEnv::MakePathList(const Node* const* const span,
-                                  const size_t size, const char sep) const {
+/// Given a span of Nodes, construct a list of paths suitable for a command
+/// line.
+std::string MakePathList(const Node* const* const span, const size_t size,
+                         const char sep, EscapeKind escape_in_out) {
   string result;
   for (const Node* const* i = span; i != span + size; ++i) {
     if (!result.empty())
       result.push_back(sep);
     const string& path = (*i)->PathDecanonicalized();
-    if (escape_in_out_ == kShellEscape) {
+    if (escape_in_out == EscapeKind::kShellEscape) {
 #ifdef _WIN32
       GetWin32EscapedString(path, &result);
 #else
@@ -521,7 +518,7 @@ std::string Edge::EvaluateCommand(const bool incl_rsp_file) const {
 }
 
 std::string Edge::GetBinding(const std::string& key) const {
-  EdgeEnv env(this, EdgeEnv::kShellEscape);
+  EdgeEnv env(this, EscapeKind::kShellEscape);
   return env.LookupVariable(key);
 }
 
@@ -530,17 +527,17 @@ bool Edge::GetBindingBool(const string& key) const {
 }
 
 string Edge::GetUnescapedDepfile() const {
-  EdgeEnv env(this, EdgeEnv::kDoNotEscape);
+  EdgeEnv env(this, EscapeKind::kDoNotEscape);
   return env.LookupVariable("depfile");
 }
 
 string Edge::GetUnescapedDyndep() const {
-  EdgeEnv env(this, EdgeEnv::kDoNotEscape);
+  EdgeEnv env(this, EscapeKind::kDoNotEscape);
   return env.LookupVariable("dyndep");
 }
 
 std::string Edge::GetUnescapedRspfile() const {
-  EdgeEnv env(this, EdgeEnv::kDoNotEscape);
+  EdgeEnv env(this, EscapeKind::kDoNotEscape);
   return env.LookupVariable("rspfile");
 }
 
